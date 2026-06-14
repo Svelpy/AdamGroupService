@@ -1,7 +1,3 @@
-"""
-Utilidades para generación y validación de slugs
-"""
-
 import re
 import unicodedata
 
@@ -9,7 +5,6 @@ import unicodedata
 def generate_slug(text: str) -> str:
     """
     Genera un slug URL-friendly a partir de un texto.
-    Ej: "Macarons Perfectos & Fáciles" -> "macarons-perfectos-faciles"
     """
     # Normalizar caracteres unicode (tildes, ñ, etc)
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')

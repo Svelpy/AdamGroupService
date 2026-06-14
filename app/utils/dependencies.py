@@ -1,17 +1,10 @@
-"""
-Dependencies para FastAPI
-Funciones reutilizables para autenticación y autorización
-"""
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from bson import ObjectId
-
 from app import models
 from app.utils.security import decode_access_token
 
-# Esquema de autenticación Bearer
 # auto_error=False permite que el header sea opcional (para endpoints públicos)
 security = HTTPBearer(auto_error=False)
 
@@ -21,9 +14,7 @@ async def get_current_user(
 ) -> models.User:
     """
     Obtener usuario actual desde el token JWT
-    
     Dependency para endpoints protegidos
-    
     Raises:
         HTTPException 401: Si el token es inválido o el usuario no existe
     """

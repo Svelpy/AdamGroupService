@@ -1,7 +1,6 @@
 class AppException(Exception):
     """
     Excepción personalizada para errores operacionales (esperados).
-    Por defecto tiene un código de estado 400.
     """
     def __init__(self, message: str, status_code: int = 400):
         super().__init__(message)
