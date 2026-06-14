@@ -53,7 +53,17 @@ class Settings(BaseSettings):
             return [o.strip() for o in self.DEV_ORIGINS.split(",") if o.strip()]
 
         return [o.strip() for o in self.PROD_ORIGINS.split(",") if o.strip()]
-    
+    # Seeds
+    SEED_ADMIN_EMAIL_1: str = "superadmin1@example.com"
+    SEED_ADMIN_NAME_1: str = "Super"
+    SEED_ADMIN_LASTNAME_1: str = "Admin Uno"
+    SEED_ADMIN_USERNAME_1: str = "superadmin1"
+    SEED_ADMIN_PASSWORD_1: str = "SuperAdmin123"
+    SEED_ADMIN_EMAIL_2: str = "superadmin2@example.com"
+    SEED_ADMIN_NAME_2: str = "Super"
+    SEED_ADMIN_LASTNAME_2: str = "Admin Dos"
+    SEED_ADMIN_USERNAME_2: str = "superadmin2"
+    SEED_ADMIN_PASSWORD_2: str = "SuperAdmin321"
     class Config:
         env_file = ".env"
         case_sensitive = True

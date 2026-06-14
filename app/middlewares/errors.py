@@ -52,7 +52,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={
                 "status": "fail",
                 "message": exc.detail
-            }
+            },
+            headers=exc.headers
         )
 
     #Errores inesperados con codigo 500
