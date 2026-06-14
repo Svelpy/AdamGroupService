@@ -8,7 +8,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from bson import ObjectId
 
-from app.models.user import User
+from app import models
 from app.utils.security import decode_access_token
 
 # Esquema de autenticación Bearer
@@ -18,7 +18,7 @@ security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> User:
+) -> models.User:
     """
     Obtener usuario actual desde el token JWT
     
@@ -59,7 +59,7 @@ async def get_current_user(
     
     # Buscar usuario en la base de datos
     try:
-        user = await User.get(ObjectId(user_id))
+        user = await models.User.get(ObjectId(user_id))
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -74,7 +74,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if user.status != UserStatus.ACTIVE:
+    if user.status != models.UserStatus.ACTIVE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo o no verificado"
@@ -83,13 +83,11 @@ async def get_current_user(
     return user
 
 
-from app.models.enums import Role, UserStatus
-
-async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
     """
     Verificar que el usuario actual sea ADMIN o SUPERADMIN
     """
-    if current_user.role not in [Role.ADMIN, Role.SUPERADMIN]:
+    if current_user.role not in [models.Role.ADMIN, models.Role.SUPERADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos de administrador"
@@ -98,11 +96,11 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
     return current_user
 
 
-async def get_current_superadmin(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_superadmin(current_user: models.User = Depends(get_current_user)) -> models.User:
     """
     Verificar que el usuario actual sea SUPERADMIN
     """
-    if current_user.role != Role.SUPERADMIN:
+    if current_user.role != models.Role.SUPERADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo el SUPERADMIN puede realizar esta acción"
@@ -114,7 +112,7 @@ async def get_current_superadmin(current_user: User = Depends(get_current_user))
 
 async def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[User]:
+) -> Optional[models.User]:
     """
     Obtener usuario actual si existe, sino retornar None
     

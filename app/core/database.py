@@ -1,16 +1,10 @@
-"""
-Configuración de conexión a MongoDB Atlas usando Beanie
-"""
-
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.core.config import settings
 import logging
+from app.models import all_models
 
 logger = logging.getLogger(__name__)
-
-
-# Cliente de MongoDB (se inicializa en startup)
 mongodb_client: AsyncIOMotorClient = None
 
 
@@ -27,20 +21,15 @@ async def connect_to_mongo():
         logger.info("✅ Conectado exitosamente a MongoDB Atlas")
         
         # Inicializar Beanie con los modelos
-        # Por ahora solo importamos User, agregaremos más modelos después
-        from app.models.user import User
-        
         await init_beanie(
             database=mongodb_client[settings.MONGODB_DB_NAME],
-            document_models=[
-                User
-            ]
+            document_models=all_models
         )
         
-        logger.info(f"✅ Beanie inicializado con base de datos: {settings.MONGODB_DB_NAME}")
+        logger.info(f"Beanie inicializado con base de datos: {settings.MONGODB_DB_NAME}")
         
     except Exception as e:
-        logger.error(f"❌ Error conectando a MongoDB: {e}")
+        logger.error(f"Error conectando a MongoDB: {e}")
         raise
 
 

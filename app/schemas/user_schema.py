@@ -1,24 +1,28 @@
-"""
-Schemas Pydantic para Usuario
-Validación y serialización de datos de usuarios
-"""
-
 from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import Optional, TypeVar, Generic, List
 from datetime import datetime
 import re
 from beanie import PydanticObjectId
-from app.models.enums import Role, UserStatus, AuthProvider
+from app import models
 
 # Generic type for pagination
 T = TypeVar('T')
 
 
-class UserBase(BaseModel):
+class UserBaseHard(BaseModel):
     """Schema base para Usuario"""
     email: EmailStr
     name: str = Field(..., min_length=2, max_length=80)
     lastname: str = Field(..., min_length=2, max_length=80)
+    
+    @field_validator('name', 'lastname')
+    @classmethod
+    def validate_names(cls, v: str) -> str:
+        v = v.strip()
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$", v):
+            raise ValueError('Solo se permiten letras, espacios, guiones y apóstrofes')
+        return v
+class UserBaseSoft(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     phone_number: Optional[str] = Field(None, pattern=r'^\+\d{5,15}$')
     birth_date: Optional[datetime] = None
@@ -33,20 +37,7 @@ class UserBase(BaseModel):
                 'El username solo puede contener letras, números, guiones (-) y guiones bajos (_)'
             )
         return v
-
-    @field_validator('name', 'lastname')
-    @classmethod
-    def validate_names(cls, v: str) -> str:
-        v = v.strip()
-        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$", v):
-            raise ValueError('Solo se permiten letras, espacios, guiones y apóstrofes')
-        return v
-
-
-# ---------------------------------------------------------------------------
-# Mixin de contraseña reutilizable
-# ---------------------------------------------------------------------------
-
+        
 class PasswordValidationMixin(BaseModel):
     """Mixin para validación de contraseñas"""
     password: str = Field(..., min_length=8, max_length=100)
@@ -62,12 +53,46 @@ class PasswordValidationMixin(BaseModel):
             raise ValueError('La contraseña debe contener al menos un número')
         return v
 
+class UserSelfUpdate(BaseModel):
+    """
+    Schema para actualizar datos del usuario (PATCH parcial).
+    Todos los campos son opcionales.
+    """
+
+    name: Optional[str] = Field(None, min_length=2, max_length=80)
+    lastname: Optional[str] = Field(None, min_length=2, max_length=80)
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    phone_number: Optional[str] = Field(None, pattern=r'^\+\d{5,15}$')
+    birth_date: Optional[datetime] = None
+
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError(
+                'El username solo puede contener letras, números, guiones (-) y guiones bajos (_)'
+            )
+        return v
+
+    @field_validator('name', 'lastname')
+    @classmethod
+    def validate_names(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip()
+        if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s'-]+$", v):
+            raise ValueError('Solo se permiten letras, espacios, guiones y apóstrofes')
+        return v
+
 
 # ---------------------------------------------------------------------------
 # Schemas de escritura (entrada de datos)
 # ---------------------------------------------------------------------------
 
-class UserSelfRegister(UserBase, PasswordValidationMixin):
+class UserSelfRegister(UserBaseHard,UserBaseSoft, PasswordValidationMixin):
     """
     Schema para auto-registro público (solo USER).
     No permite elegir rol — siempre se asigna Role.USER.
@@ -75,12 +100,12 @@ class UserSelfRegister(UserBase, PasswordValidationMixin):
     pass
 
 
-class UserCreate(UserBase, PasswordValidationMixin):
+class UserCreate(UserBaseHard,UserBaseSoft, PasswordValidationMixin):
     """
     Schema para crear usuario desde el panel administrativo.
     Permite asignar un rol específico.
     """
-    role: Role = Role.USER
+    role: models.Role = models.Role.USER
 
 
 class UserUpdate(BaseModel):
@@ -94,6 +119,10 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     phone_number: Optional[str] = Field(None, pattern=r'^\+\d{5,15}$')
     birth_date: Optional[datetime] = None
+    email_verified: Optional[bool] = None
+    status: Optional[models.UserStatus] = None
+    role: Optional[models.Role] = None
+    avatar_url: Optional[str] = None
 
     @field_validator('username')
     @classmethod
@@ -131,14 +160,15 @@ class UserResponse(BaseModel):
     name: str
     lastname: str
     username: Optional[str] = None
-    role: Role
-    status: UserStatus
-    email_verified: bool
-    auth_provider: AuthProvider
-    avatar_url: Optional[str] = None
     phone_number: Optional[str] = None
     birth_date: Optional[datetime] = None
-    created_at: datetime
+    avatar_url: Optional[str] = None
+    auth_provider: models.AuthProvider
+    email_verified: bool
+    role: models.Role
+    status: models.UserStatus 
+    
+    created_at: datetime  
     updated_at: datetime
     created_by: Optional[str] = None
     updated_by: Optional[str] = None
@@ -182,7 +212,7 @@ class TokenResponse(BaseModel):
     """Schema de respuesta al autenticarse exitosamente"""
     access_token: str
     token_type: str = "bearer"
-    user: UserResponse
+
 
 
 # ---------------------------------------------------------------------------
@@ -225,3 +255,21 @@ class PaginatedResponse(BaseModel, Generic[T]):
     per_page: int       # Registros por página
     total_pages: int    # Total de páginas
     data: List[T]       # Lista de objetos tipados
+
+
+# Cuerpo para restablecer contraseñas administrativamente
+class AdminResetPassword(PasswordValidationMixin):
+    """Schema para restablecer contraseñas administrativamente"""
+    pass
+
+
+# Cuerpo para cambiar el estado administrativamente
+class ChangeStatusBody(BaseModel):
+    """Schema para cambiar el estado administrativamente"""
+    status: models.UserStatus
+
+
+# Cuerpo para cambiar el rol administrativamente
+class ChangeRoleBody(BaseModel):
+    """Schema para cambiar el rol administrativamente"""
+    role: models.Role
