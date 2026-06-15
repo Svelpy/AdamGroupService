@@ -1,8 +1,3 @@
-"""
-Servicio para lógica de negocio de Usuarios
-Maneja CRUD, jerarquía de roles, avatares y gestión de estado
-"""
-
 from typing import Optional, Dict, Any
 from fastapi import UploadFile
 from datetime import datetime
@@ -59,7 +54,7 @@ class UserService:
             raise AppException("Usuario no existente", 404)
         # Validar si está eliminado lógicamente
         if user.is_deleted:
-            raise AppException("Usuario eliminado lógicamente", 404)
+            raise AppException("Usuario eliminado", 404)
         return user
 
     # ─────────────────────────────────────────────
@@ -85,13 +80,13 @@ class UserService:
         # Verificar si el email ya existe
         existing_user = await models.User.find_one(models.User.email == user_data.email)
         if existing_user:
-            raise AppException("El email ya está registrado.",400)
+            raise AppException("El email ya está registrado.",409)
         
         # Verificar si el username ya existe
         if username:
             existing_username = await models.User.find_one(models.User.username == username)
             if existing_username:
-                raise AppException("El username ya está en uso.",400)
+                raise AppException("El username ya está en uso.",409)
         
         # Crear nuevo usuario
         new_user = models.User(
@@ -175,13 +170,13 @@ class UserService:
         if update_data.username is not None and update_data.username != user.username:
             existing = await models.User.find_one(models.User.username == update_data.username)
             if existing:
-                raise AppException("El username ya está en uso",400)
+                raise AppException("El username ya está en uso",409)
 
         # Validar unicidad de email
         if update_data.email is not None and update_data.email != user.email:
             existing_email = await models.User.find_one(models.User.email == update_data.email)
             if existing_email:
-                raise AppException("El email ya está en uso",400)
+                raise AppException("El email ya está en uso",409)
 
         update_dict = update_data.model_dump(exclude_unset=True)
         for key, value in update_dict.items():
@@ -282,12 +277,12 @@ class UserService:
         if update_data.username is not None and update_data.username != actor.username:
             existing = await models.User.find_one(models.User.username == update_data.username)
             if existing:
-                raise AppException("El username ya está en uso", 400)
+                raise AppException("El username ya está en uso", 409)
         #Validar unicidad de email (si está cambiando)
         if update_data.email is not None and update_data.email != actor.email:
             existing_email = await models.User.find_one(models.User.email == update_data.email)
             if existing_email:
-                raise AppException("El email ya está en uso", 400)
+                raise AppException("El email ya está en uso", 409)
         update_dict = update_data.model_dump(exclude_unset=True)
         #Aplicar los cambios al objeto del actor
         for key, value in update_dict.items():

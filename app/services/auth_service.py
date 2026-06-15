@@ -27,13 +27,13 @@ class AuthService:
         # Verificar si el email ya existe
         existing_user = await models.User.find_one(models.User.email == user_data.email)
         if existing_user:
-            raise AppException("El email ya está registrado.",400)
+            raise AppException("El email ya está registrado.",409)
         
         # Verificar si el username ya existe
         if username!=None:
             existing_username = await models.User.find_one(models.User.username == username)
             if existing_username:
-                raise AppException("El username ya está en uso.",400)
+                raise AppException("El username ya está en uso.",409)
         
         # Crear nuevo usuario
         new_user = models.User(

@@ -23,7 +23,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content={
                 "status": "fail",
-                "message": exc.message
+                "message": exc.message,
+                "details": {}
             }
         )
 
@@ -51,7 +52,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content={
                 "status": "fail",
-                "message": exc.detail
+                "message": exc.detail,
+                "details": {}
             },
             headers=exc.headers
         )
@@ -68,7 +70,9 @@ def register_exception_handlers(app: FastAPI) -> None:
                 content={
                     "status": "error",
                     "message": str(exc),
-                    "details": stack_trace
+                    "details": {
+                        "stack":stack_trace
+                    }    
                 }
             )
 
@@ -101,6 +105,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 status_code=500,
                 content={
                     "status": "error",
-                    "message": "¡Miechi! Algo salió muy mal"
+                    "message": "¡Miechi! Algo salió muy mal",
+                    "details": {}
                 }
             )
